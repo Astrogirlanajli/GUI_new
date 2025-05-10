@@ -1,7 +1,25 @@
+
+
+Title- ui.page_opts(title="Raman spectroscopy", fillable=True)
+graph tile:
+ui.h2("spectrum", style="color:black; font-weight:bold")
+
 # layouts
+sidebar on left
+input selection for ai model
+input numeric- or wavelength
+reference: https://shiny.posit.co/blog/posts/shiny-express/
 
 
 #Components
+When dealing with many inputs, consider grouping them into an accordion (and placing the accordion in the sidebar)
+input selection for ai model
+input numeric- or wavelength
+reference: https://shiny.posit.co/blog/posts/shiny-express/
 
+File input for training data
+Reference- https://shiny.posit.co/py/components/inputs/file/
+Action button- train, test the model
+slider- for aquasation time
 
 #packages
