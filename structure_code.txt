@@ -22,4 +22,12 @@ Reference- https://shiny.posit.co/py/components/inputs/file/
 Action button- train, test the model
 slider- for aquasation time
 
+#output
+Decorate your plotting function with a @render.plot() decorator
+@render.plot() is used above output
+Value box for result
+ui.value_box
+
 #packages
+Matplot-
+import matplotlib.pyplot as plt
