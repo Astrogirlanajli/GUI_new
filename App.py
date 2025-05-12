@@ -24,3 +24,26 @@ with ui.sidebar():
     ui.input_file("test", "Upload the test data")
     ui.input_action_button("bt", "Test the model")
 # outputs
+@render.plot()
+def plot():
+    frequency = np.array([100, 200, 300, 400, 500])
+    magnitude = np.array([10, 25, 15, 5, 30])
+    fig, ax = plt.subplots() 
+
+    ax.plot(frequency, magnitude, marker='o')
+    ax.set_xlabel('Frequency (Hz)')
+    ax.set_ylabel('Magnitude')
+    #ax.set_title('Spectrum Graph')
+    ax.grid(True)
+    return fig
+# From https://icons.getbootstrap.com/icons/explosion/
+explosion_icon = ui.HTML(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" class="bi bi-explosion" style="fill:currentColor;height:100%;" aria-hidden="true" role="img">'
+    '<path d="M7.646.146a.5.5 0 0 1 .708 0l.468.468a.5.5 0 0 0 .61.075l.567-.331a.5.5 0 0 1 .685.685l-.331.567a.5.5 0 0 0 .075.61l.468.468a.5.5 0 0 1 0 .708l-.468.468a.5.5 0 0 0-.075.61l.331.567a.5.5 0 0 1-.685.685l-.567-.331a.5.5 0 0 0-.61.075l-.468.468a.5.5 0 0 1-.708 0l-.468-.468a.5.5 0 0 0-.61-.075l-.567.331a.5.5 0 0 1-.685-.685l.331-.567a.5.5 0 0 0-.075-.61L5.146 3.56a.5.5 0 0 1 0-.708l.468-.468a.5.5 0 0 0 .075-.61l-.331-.567a.5.5 0 0 1 .685-.685l.567.331a.5.5 0 0 0 .61-.075L7.646.146Z"/>'
+    '<path d="M7.09 5.365 8 8l2.635.91L8 9.818 7.09 12.45 6.182 9.818 3.547 8.91 6.182 8 7.09 5.365ZM8 13.5c0-.098.008-.195.023-.29l.318-1.59 1.54-.533c.062-.021.12-.05.175-.084l1.345-.82-1.345-.82a1.04 1.04 0 0 1-.175-.084l-1.54-.533-.318-1.59A1.5 1.5 0 0 0 8 2.5a1.5 1.5 0 0 0-1.023 2.68l-.318 1.59-1.54.533a1.04 1.04 0 0 1-.175.084l-1.345.82 1.345.82c.055.033.113.063.175.084l1.54.533.318 1.59c.015.095.023.192.023.29a1.5 1.5 0 0 0 3 0Z"/>'
+    '</svg>'
+)
+with ui.value_box(showcase=explosion_icon, theme="bg-gradient-orange-red"):
+    "     This sample is"
+    "🔥 Explosive"
+    " With accuracy of 70 %"
