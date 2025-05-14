@@ -1,9 +1,12 @@
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 from shiny import App, reactive
 from shiny.express import input, render, ui
 from shinywidgets import render_plotly
 import pandas as pd
 import plotly.express as px
-
+import numpy as np
 # Page setup
 ui.input_dark_mode() 
 ui.page_opts(title="Raman spectroscopy", fillable=True)
@@ -12,17 +15,46 @@ ui.h2("Spectrum", style="color:Blue; font-weight:bold")
 
 # Sidebar inputs
 with ui.sidebar():
-    ui.input_numeric("wavelength", "Wavelength of Laser (nm)", 876.0)
-    ui.input_selectize(
-        "var", "Select AI model",
-        ["Linear Regression", "Polynomial Regression", "Logistic Regression",
-         "Decision Tree", "Random Forest", "Convolutional Neural Network"]
-    )
-    ui.input_file("train", "Upload the training data")
-    ui.input_action_button("btn", "Train the model")
-    ui.input_slider("slider", "Aquasation time(sec)", 0, 100, 50)
-    ui.input_file("test", "Upload the test data")
-    ui.input_action_button("bt", "Test the model")
+   
+    with ui.panel_well():
+        #ui.h1("Select trained model")
+        ui.input_selectize(  
+    "select",  
+    "Select AI model",  
+    {"Linear Regression":"Linear Regression", "Polynomial Regression":"Polynomial Regression", "Logistic Regression":"Logistic Regression",
+         "Decision Tree":"Decision Tree",  "Convolutional Neural Network":"CNN"},  
+    multiple=True,)
+        
+        ui.input_file("train", "Upload the training data")
+        ui.input_action_button("btn", "Train the model")
+        
+        
+    with ui.panel_well():
+        #ui.h1("Acqustition")
+        ui.input_numeric("wavelength", "Excitation wavelength (nm)", 785)
+        ui.input_numeric("int", "Integration time (ms)", 500)
+        
+    
+    with ui.panel_well():
+         with ui.layout_columns():
+             ui.input_numeric("aq", "Aquasation time", 10)
+             ui.input_selectize( "var", "Select units ",["s", "ms", "ns", "µs"])
+         ui.input_action_button("dark", "Dark Spectrum record")
+        
+         with ui.layout_columns():
+             ui.input_action_button("bs", "baseline correction")
+             ui.input_action_button("Nor", "Normalisation")
+
+
+        
+    
+             
+            
+    with ui.panel_well():
+        ui.input_file("test", "Upload the test data")
+        ui.input_action_button("bt", "Test the model")
+
+
 # outputs
 @render.plot()
 def plot():
@@ -36,6 +68,7 @@ def plot():
     #ax.set_title('Spectrum Graph')
     ax.grid(True)
     return fig
+
 # From https://icons.getbootstrap.com/icons/explosion/
 explosion_icon = ui.HTML(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" class="bi bi-explosion" style="fill:currentColor;height:100%;" aria-hidden="true" role="img">'
@@ -43,6 +76,7 @@ explosion_icon = ui.HTML(
     '<path d="M7.09 5.365 8 8l2.635.91L8 9.818 7.09 12.45 6.182 9.818 3.547 8.91 6.182 8 7.09 5.365ZM8 13.5c0-.098.008-.195.023-.29l.318-1.59 1.54-.533c.062-.021.12-.05.175-.084l1.345-.82-1.345-.82a1.04 1.04 0 0 1-.175-.084l-1.54-.533-.318-1.59A1.5 1.5 0 0 0 8 2.5a1.5 1.5 0 0 0-1.023 2.68l-.318 1.59-1.54.533a1.04 1.04 0 0 1-.175.084l-1.345.82 1.345.82c.055.033.113.063.175.084l1.54.533.318 1.59c.015.095.023.192.023.29a1.5 1.5 0 0 0 3 0Z"/>'
     '</svg>'
 )
+
 with ui.value_box(showcase=explosion_icon, theme="bg-gradient-orange-red"):
     "     This sample is"
     "🔥 Explosive"
