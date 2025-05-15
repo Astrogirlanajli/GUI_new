@@ -10,6 +10,7 @@ import numpy as np
 # Page setup
 ui.input_dark_mode() 
 ui.page_opts(title="Raman spectroscopy", fillable=True)
+ui.include_css(app_dir / "styles.css")
 ui.h2("Spectrum", style="color:Blue; font-weight:bold")
 
 
