@@ -8,7 +8,7 @@ import pandas as pd
 import plotly.express as px
 import numpy as np
 from faicons import icon_svg as icon
-
+import time
 # Page setup
 ui.input_dark_mode()
 ui.page_opts(title="Raman spectroscopy", fillable=True)
@@ -49,9 +49,7 @@ with ui.sidebar():
         ui.h6("Baseline order")
         with ui.layout_columns():
             ui.input_numeric("base", " ", 5)
-            with ui.layout_columns(col_widths=5):
-                with ui.card():
-                    ui.h6("correct")
+            ui.input_action_button("cor", "  Correct ",  style="width: 70px; height: 50px; font-size: 9px;", class_="btn-success")
           
         ui.input_action_button("nor", "Normalise")
 
@@ -61,18 +59,11 @@ with ui.sidebar():
 
 
 # outputs
-@render.plot()
-def plot():
-    frequency = np.array([100, 200, 300, 400, 500])
-    magnitude = np.array([10, 25, 15, 5, 30])
-    fig, ax = plt.subplots()
-
-    ax.plot(frequency, magnitude, marker="o")
-    ax.set_xlabel("Frequency (Hz)")
-    ax.set_ylabel("Magnitude")
-    # ax.set_title('Spectrum Graph')
-    ax.grid(True)
-    return fig
+with ui.div(style="display: flex; gap: 1.5px; margin-left: 10px;"):
+    ui.input_action_button("pause", "⏸️", style="width:40px; height:40px; font-size:28px; padding:0; line-height:40px; text-align:center; background-color:#444444; color:white; border:none;")
+    ui.input_action_button("play", "▶️", style="width:40px; height:40px; font-size:28px; padding:0; line-height:40px; text-align:center; background-color:#2e7d32; color:white; border:none;")
+    ui.input_action_button("tubelight", "💡", style="width:40px; height:40px; font-size:28px; padding:0; line-height:40px; text-align:center; background-color:#ff9800; color:black; border:none;")
+    ui.input_action_button("record", "🔴", style="width:40px; height:40px; font-size:28px; padding:0; line-height:40px; text-align:center; background-color:#d32f2f; color:white; border:none;")
 
 # From https://icons.getbootstrap.com/icons/explosion/
 explosion_icon = ui.HTML(
