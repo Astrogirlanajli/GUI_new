@@ -9,6 +9,7 @@ import plotly.express as px
 import numpy as np
 from faicons import icon_svg as icon
 import time
+
 # Page setup
 ui.input_dark_mode()
 ui.page_opts(title="Raman spectroscopy", fillable=True)
@@ -60,10 +61,38 @@ with ui.sidebar():
 
 # outputs
 with ui.div(style="display: flex; gap: 1.5px; margin-left: 10px;"):
-    ui.input_action_button("pause", "⏸️", style="width:40px; height:40px; font-size:28px; padding:0; line-height:40px; text-align:center; background-color:#444444; color:white; border:none;")
-    ui.input_action_button("play", "▶️", style="width:40px; height:40px; font-size:28px; padding:0; line-height:40px; text-align:center; background-color:#2e7d32; color:white; border:none;")
-    ui.input_action_button("tubelight", "💡", style="width:40px; height:40px; font-size:28px; padding:0; line-height:40px; text-align:center; background-color:#ff9800; color:black; border:none;")
-    ui.input_action_button("record", "🔴", style="width:40px; height:40px; font-size:28px; padding:0; line-height:40px; text-align:center; background-color:#d32f2f; color:white; border:none;")
+    with ui.tooltip(id="btn_tooltip", placement="top"):
+        ui.input_action_button("pause", "⏸️", style="width:40px; height:40px; font-size:28px; padding:0; line-height:40px; text-align:center; background-color:#444444; color:white; border:none;")
+        "Pause"
+
+    with ui.tooltip(placement="top"):
+        ui.input_action_button("play", "▶️", style="width:40px; height:40px; font-size:28px; padding:0; line-height:40px; text-align:center; background-color:#2e7d32; color:white; border:none;")
+        "Resume"
+
+    with ui.tooltip(placement="top"):
+        ui.input_action_button("tubelight", "💡", style="width:40px; height:40px; font-size:28px; padding:0; line-height:40px; text-align:center; background-color:#ff9800; color:black; border:none;")
+        "Dark spectrum"
+
+    with ui.tooltip(placement="top"):
+        ui.input_action_button("record", "🔴", style="width:40px; height:40px; font-size:28px; padding:0; line-height:40px; text-align:center; background-color:#d32f2f; color:white; border:none;")
+        "Start recording"
+
+start_time = time.time()
+@render.plot
+def live_plot():
+    reactive.invalidate_later(0.5)  # Update every 0.2 seconds
+
+    t = time.time() - start_time  
+    x = np.linspace(0, 2 * np.pi, 100)
+    y = np.sin(x + t)
+
+    fig, ax = plt.subplots()
+    ax.plot(x, y)
+    ax.set_ylim(-1.2, 1.2)
+    ax.set_title("Graph-1")
+    return fig
+
+
 
 # From https://icons.getbootstrap.com/icons/explosion/
 explosion_icon = ui.HTML(
