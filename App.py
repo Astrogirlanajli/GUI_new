@@ -7,6 +7,7 @@ from shinywidgets import render_plotly
 import pandas as pd
 import plotly.express as px
 import numpy as np
+from faicons import icon_svg as icon
 
 # Page setup
 ui.input_dark_mode()
@@ -73,7 +74,6 @@ def plot():
     ax.grid(True)
     return fig
 
-
 # From https://icons.getbootstrap.com/icons/explosion/
 explosion_icon = ui.HTML(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" class="bi bi-explosion" style="fill:currentColor;height:100%;" aria-hidden="true" role="img">'
@@ -82,7 +82,18 @@ explosion_icon = ui.HTML(
     "</svg>"
 )
 
-with ui.value_box(showcase=explosion_icon, theme="bg-gradient-orange-red"):
-    "This sample is"
-    "🔥 Explosive"
-    " With accuracy of 70 %"
+with ui.layout_column_wrap(fill=False):
+    with ui.value_box(showcase=explosion_icon, theme="bg-gradient-orange-red"):
+        "This sample is"
+        "🔥 Explosive"
+        " With accuracy of 70 %"
+    with ui.value_box():
+        
+        @render.ui
+        def selected_models_box():
+            selected = input.select()
+            if not selected:
+                return ui.markdown("💥 No model selected")
+            lines = [f"{model}: explosive" for model in selected]
+            return ui.markdown("\n \n".join(lines))
+        "Explosive"
