@@ -1,3 +1,4 @@
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -125,15 +126,34 @@ explosion_icon = ui.HTML(
 with ui.layout_column_wrap(fill=False):
     with ui.value_box(showcase=explosion_icon, theme="bg-gradient-orange-red"):
         "This sample is"
-        "🔥 Explosive"
+        "Explosive"
         " With accuracy of 70 %"
+        
     with ui.value_box():
         
         @render.ui
         def selected_models_box():
+            Result= input.res()
             selected = input.select()
-            if not selected:
-                return ui.markdown("💥 No model selected")
-            lines = [f"{model}: explosive" for model in selected]
-            return ui.markdown("\n \n".join(lines))
-        "Explosive"
+            if not Result:
+                return ui.markdown("Not yet tested")
+            else:
+                if not selected:
+                    return ui.markdown("💥 No model selected")
+                else:
+                    lines = [f"{model}: explosive" for model in selected]
+                    content = "\n\n".join(lines) + "\n\n" + \
+          "<br><br>" + \
+          "<b><span style='font-size: 30px;'>🔥 Explosive</span></b>"
+                    return ui.tags.div(
+    ui.markdown(content), style="""
+        background: linear-gradient(to right, #ff512f, #dd2476);
+        padding: 15px;
+        border-radius: 8px;
+        color: white;
+        font-weight: bold;
+    """
+)
+            
+                   
+        " "
