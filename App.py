@@ -55,7 +55,7 @@ with ui.sidebar():
         ui.input_action_button("nor", "Normalise")
 
     with ui.panel_well():
-        ui.input_action_button("bt", "Test the model")
+        ui.input_action_button("res", "Test the model")
 
 
 
@@ -77,12 +77,34 @@ with ui.div(style="display: flex; gap: 1.5px; margin-left: 10px;"):
         ui.input_action_button("record", "🔴", style="width:40px; height:40px; font-size:28px; padding:0; line-height:40px; text-align:center; background-color:#d32f2f; color:white; border:none;")
         "Start recording"
 
+
 start_time = time.time()
+paused = reactive.value(False)
+last_pause_time = [0]
+accumulated_pause = [0]
+
+@reactive.effect
+@reactive.event(input.pause)
+def do_pause():
+    paused.set(True)
+    last_pause_time[0] = time.time()
+
+@reactive.effect
+@reactive.event(input.play)
+def do_play():
+    if paused():
+        paused.set(False)
+        accumulated_pause[0] += time.time() - last_pause_time[0]
+
 @render.plot
 def live_plot():
-    reactive.invalidate_later(0.5)  # Update every 0.2 seconds
+    reactive.invalidate_later(0.5)
 
-    t = time.time() - start_time  
+    if paused():
+        t = last_pause_time[0] - start_time - accumulated_pause[0]
+    else:
+        t = time.time() - start_time - accumulated_pause[0]
+
     x = np.linspace(0, 2 * np.pi, 100)
     y = np.sin(x + t)
 
@@ -91,8 +113,6 @@ def live_plot():
     ax.set_ylim(-1.2, 1.2)
     ax.set_title("Graph-1")
     return fig
-
-
 
 # From https://icons.getbootstrap.com/icons/explosion/
 explosion_icon = ui.HTML(
