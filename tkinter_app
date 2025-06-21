@@ -1,1 +1,18 @@
+import tkinter as tk
+from tkinter import ttk
+root = tk.Tk()
+root.title("Pratice App")
+# function for on-click button
+def on_click():
+    print("Testing")
 
+
+# Button in app 
+btn = tk.Button(root, text ="First Button")
+btn.grid() # shows on window
+# Label
+lb= tk.Label(root, text ="Label 1")
+lb.grid(row=0, column = 1) #set row and columns
+# Action after button click- command
+btn_2 = tk.Button(root, text ="Second Button", command = on_click)
+btn_2.grid(row = 1, column = 1) 
