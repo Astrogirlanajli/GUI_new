@@ -1,0 +1,152 @@
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from shiny import App, reactive
+from shiny.express import input, render, ui
+from shinywidgets import render_plotly
+import pandas as pd
+import plotly.express as px
+import numpy as np
+from faicons import icon_svg as icon
+import time
+
+# Page setup
+ui.input_dark_mode()
+#ui.page_opts(title="Raman Spectroscopic Tool for Detection of Explosives", fillable=True)
+
+ui.HTML("""
+<div style="
+    background-color: #B2BEB5;
+    padding: 20px;
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    color: black;
+    border-bottom: 2px solid #ccc;
+    margin-bottom: 15px;">
+    Raman Spectroscopic Tool for Detection of Explosives
+</div>
+""")
+
+
+# ui.h2("Spectrum", style="color:Blue; font-weight:bold")
+
+
+# Sidebar inputs
+with ui.sidebar():
+
+    with ui.panel_well():
+        # ui.h1("Select trained model")
+        ui.input_selectize(
+            "select",
+            "Select AI model",
+            {
+                "Linear Regression": "Linear Regression",
+                "Polynomial Regression": "Polynomial Regression",
+                "Logistic Regression": "Logistic Regression",
+                "Decision Tree": "Decision Tree",
+                "Convolutional Neural Network": "CNN",
+            },
+            multiple=True,
+        )
+
+
+
+    with ui.panel_well():
+        # ui.h1("Acqustition")
+        ui.input_numeric("wavelength", "Excitation wavelength (nm)", 785)
+        ui.h6("Integration time")
+        with ui.layout_columns():
+            ui.input_numeric("aq", " ", 10)
+            ui.input_selectize("var", " ", ["s", "ms", "ns", "µs"])
+ 
+    
+   
+    with ui.panel_well():
+        ui.h6("Baseline order")
+        with ui.layout_columns(col_widths=[5, 2]):
+            ui.input_numeric("base", " ", 5)
+            ui.input_action_button(
+            "cor",
+            "✔️",
+            style="""
+                margin-top: 20px;
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+                padding: 0;
+                line-height: 40px;
+                text-align: center;
+                background-color: #4caf50;
+                color: white;
+                border: none;
+            """
+            
+        )
+      
+        ui.input_action_button(
+        "nor",
+        "Normalise",
+        style= "background-color:#1976d2; color:white; border:none; margin-top:10px;"
+    )
+
+    ui.input_action_button("res", "Test the model" ,  style= "background-color:#ff2c2c; color:white; border:none;font-size: 18px; margin-top:10px;")
+
+
+
+# outputs
+with ui.div(style="display: flex; gap: 1.5px; margin-left: 10px;"):
+    with ui.tooltip(id="btn_tooltip", placement="top"):
+        ui.input_action_button("pause", "⏸️", style="width:40px; height:40px; font-size:28px; padding:0; line-height:40px; text-align:center; background-color:#444444; color:white; border:none;")
+        "Pause"
+
+    with ui.tooltip(placement="top"):
+        ui.input_action_button("play", "▶️", style="width:40px; height:40px; font-size:28px; padding:0; line-height:40px; text-align:center; background-color:#2e7d32; color:white; border:none;")
+        "Resume"
+
+    with ui.tooltip(placement="top"):
+        ui.input_action_button("tubelight", "💡", style="width:40px; height:40px; font-size:28px; padding:0; line-height:40px; text-align:center; background-color:#ff9800; color:black; border:none;")
+        "Dark spectrum"
+
+    with ui.tooltip(placement="top"):
+        ui.input_action_button("record", "🔴", style="width:40px; height:40px; font-size:28px; padding:0; line-height:40px; text-align:center; background-color:#d32f2f; color:white; border:none;")
+        "Start recording"
+
+
+start_time = time.time()
+paused = reactive.value(False)
+last_pause_time = [0]
+accumulated_pause = [0]
+
+@reactive.effect
+@reactive.event(input.pause)
+def do_pause():
+    paused.set(True)
+    last_pause_time[0] = time.time()
+
+@reactive.effect
+@reactive.event(input.play)
+def do_play():
+    if paused():
+        paused.set(False)
+        accumulated_pause[0] += time.time() - last_pause_time[0]
+
+@render.plot
+def live_plot():
+    reactive.invalidate_later(0.5)
+
+    if paused():
+        t = last_pause_time[0] - start_time - accumulated_pause[0]
+    else:
+        t = time.time() - start_time - accumulated_pause[0]
+
+    x = np.linspace(0, 2 * np.pi, 100)
+    y = np.sin(x + t)
+
+    fig, ax = plt.subplots()
+    ax.plot(x, y)
+    ax.set_ylim(-1.2, 1.2)
+    ax.set_title("Graph-1")
+    return fig
+
