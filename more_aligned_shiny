@@ -93,6 +93,37 @@ with ui.sidebar():
 
     ui.input_action_button("res", "Test the model" ,  style= "background-color:#ff2c2c; color:white; border:none;font-size: 18px; margin-top:10px;")
 
+    with ui.panel_well():
+        ui.h5("Detection Result", style="font-weight:bold; color:black;")
+        @render.ui
+        def selected_models_box():
+            Result = input.res()
+            selected = input.select()
+            if not Result:return ui.markdown("Not yet tested")
+
+            if not selected:
+                return ui.markdown("💥 No model selected")
+
+            lines = [f"{model}: explosive" for model in selected]
+
+            content = "\n\n".join(lines) + """
+            <br><br>
+            <b><span style='font-size: 19px;'>🔥 Explosive</span></b>
+            """
+
+            return ui.tags.div(
+                ui.markdown(content),
+                style="""
+                    background: linear-gradient(to right, #FFD700, #FF8C00, #FF4500, #D32F2F);
+                    padding: 12px;
+                    border-radius: 8px;
+                    color: white;
+                    font-size: 9px;
+                    font-weight: bold;
+                    text-align: center;
+                    margin-top: 10px;
+                """
+            )
 
 
 # outputs
@@ -131,22 +162,77 @@ def do_play():
     if paused():
         paused.set(False)
         accumulated_pause[0] += time.time() - last_pause_time[0]
+        
+with ui.tags.div(
+    style="""
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    """
+):
+    with ui.card(full_screen=True):
+        ui.card_header("Live spectrum")
 
-@render.plot
-def live_plot():
-    reactive.invalidate_later(0.5)
+        @render.plot
+        def live_plot():
+            reactive.invalidate_later(0.5)
+            if paused():
+                t = last_pause_time[0] - start_time - accumulated_pause[0]
+            else:
+                t = time.time() - start_time - accumulated_pause[0]
 
-    if paused():
-        t = last_pause_time[0] - start_time - accumulated_pause[0]
-    else:
-        t = time.time() - start_time - accumulated_pause[0]
+            x = np.linspace(0, 2 * np.pi, 100)
+            y = np.sin(x + t)
 
-    x = np.linspace(0, 2 * np.pi, 100)
-    y = np.sin(x + t)
+            fig, ax = plt.subplots()
+            ax.plot(x, y)
+            ax.set_ylim(-1.2, 1.2)
+            return fig
+with ui.tags.div(
+    style="""
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+    """
+):
+    with ui.card(full_screen=True):
+        ui.card_header("Background corrected Spectrum")
 
-    fig, ax = plt.subplots()
-    ax.plot(x, y)
-    ax.set_ylim(-1.2, 1.2)
-    ax.set_title("Graph-1")
-    return fig
+        @render.plot
+        def live1_plot():
+            reactive.invalidate_later(0.5)
+            if paused():
+                t = last_pause_time[0] - start_time - accumulated_pause[0]
+            else:
+                t = time.time() - start_time - accumulated_pause[0]
 
+            x = np.linspace(0,  np.pi, 100)
+            y = np.sin(x + t)
+
+            fig, ax = plt.subplots()
+            ax.plot(x, y)
+            ax.set_ylim(-1.2, 1.2)
+            return fig
+
+with ui.card(full_screen=True):
+        ui.card_header("Normalised Spectrum")
+
+        @render.plot
+        def live3_plot():
+            reactive.invalidate_later(0.5)
+            if paused():
+                t = last_pause_time[0] - start_time - accumulated_pause[0]
+            else:
+                t = time.time() - start_time - accumulated_pause[0]
+
+            x = np.linspace(0,  np.pi, 100)
+            y = np.cos(x + t)
+
+            fig, ax = plt.subplots()
+            ax.plot(x, y)
+            ax.set_ylim(-1.2, 1.2)
+            return fig
