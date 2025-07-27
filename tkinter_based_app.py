@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
+import tkinter.ttk as ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 import numpy as np
@@ -14,12 +14,26 @@ accumulated_pause = 0
 
 # Tkinter App
 root = tk.Tk()
-root.title("Raman Spectroscopy GUI")
-root.geometry("1200x750")
+root.title("GUI")
+root.geometry("1420x800")
 root.configure(bg="white")
+blank = tk.PhotoImage()
+tk.Label(
+    root,
+    image=blank,
+    text="Raman Spectroscopic Tool for Detection of Explosives",
+    compound="c",              # Center text over image
+    font=("Arial",30, "bold"),
+    bg="#545454",
+    fg="white",
+    width=1420,                # Full window width in pixels
+    height=60,                 # Banner height in pixels
+    bd=0,
+    padx=0
+).pack(padx=0, pady=0)
 
 # LEFT PANEL
-frame_left = tk.Frame(root, bg="white", width=280)
+frame_left = tk.Frame(root, background="white", width=320)
 frame_left.pack(side=tk.LEFT, fill=tk.Y, padx=10, pady=10)
 frame_left.pack_propagate(False)
 
@@ -31,6 +45,15 @@ models = ["Linear Regression", "Polynomial Regression", "Logistic Regression", "
 for model in models:
     model_listbox.insert(tk.END, model)
 model_listbox.pack(fill=tk.X, pady=(0, 10))
+
+# Train button
+
+style = ttk.Style()
+style.theme_use("clam")  # Works across OSes
+style.configure("My.TButton", foreground="white", background="blue")
+myButton = ttk.Button(frame_left, text="Train", style="My.TButton")
+myButton.grid()
+
 
 # Excitation Wavelength
 tk.Label(frame_left, text="Excitation wavelength (nm)", bg="white").pack(anchor="w", pady=(0, 5))
