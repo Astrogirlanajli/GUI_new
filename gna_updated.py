@@ -57,6 +57,43 @@ right_frame = tk.Frame(root, bg="white", width=1065)
 right_frame.pack(side="right", fill="y")
 right_frame.pack_propagate(False)
 
+def create_plot_box(parent, title):
+    # Define color by title
+    title_lower = title.lower()
+    if "normalised" in title_lower:
+        box_color = "white"
+        text_color = "orange"
+    elif "corrected" in title_lower:
+        box_color = "white"
+        text_color = "green"
+    else:  # Live spectrum or others
+        box_color = "white"
+        text_color = "black"
+
+    # Outer container (holds label and box)
+    container = tk.Frame(parent, bg="white")
+    container.pack(pady=(15, 5), anchor="w")
+
+    # Label (above box, outside)
+    title_label = tk.Label(container, text=title, font=("Arial", 16, "bold"),
+                           fg=text_color, bg="white", anchor="w", justify="left")
+    title_label.pack(anchor="w", padx=10)
+
+    # Colored frame (box)
+    frame = tk.Frame(container, bg=box_color, height=230, width=1020,
+                     highlightbackground="black", highlightthickness=2)
+    frame.pack_propagate(False)
+    frame.pack(padx=10, pady=(2, 0))
+
+   
+create_plot_box(right_frame, "Live Spectrum")
+create_plot_box(right_frame, "Background Corrected Spectrum")
+create_plot_box(right_frame, "Normalised Spectrum")
+
+
+
+
+
 # Top frame in right panel
 top_frame_r = tk.Frame(right_frame, bg="white", height=246.5, width=1060)
 top_frame_r.pack(pady=(0, 0), padx=0)
@@ -71,6 +108,9 @@ middle_frame_r.pack_propagate(False)
 bottom_frame_r = tk.Frame(right_frame, bg="white", height=246.5, width=1060)
 bottom_frame_r.pack(pady=(0, 0), padx=0, fill="both", expand=True)
 bottom_frame_r.pack_propagate(False)
+
+top_button_frame = tk.Frame(top_frame_r, bg="white")
+top_button_frame.pack(side="top", fill="x", padx=10, pady=(10, 5))
 
 #Train button
 # Define the custom font
@@ -418,5 +458,46 @@ banner_label = tk.Label(
 canvas.tag_bind(oval, "<Button-1>", lambda e: detect_action())
 canvas.tag_bind(text, "<Button-1>", lambda e: detect_action())
 
-root.mainloop()
+# -- Play/Pause tracking variables --
+paused = False
+start_time = time.time()
+last_pause_time = 0
+accumulated_pause = 0
 
+# -- Pause/Play functions --
+def toggle_pause():
+    global paused, last_pause_time
+    paused = True
+    last_pause_time = time.time()
+
+def toggle_play():
+    global paused, accumulated_pause
+    if paused:
+        paused = False
+        accumulated_pause += time.time() - last_pause_time
+
+# -- Function to create a modern icon-like label that acts like a button : still working--
+def create_icon_button(parent, symbol, command=None):
+    lbl = tk.Label(
+        parent,
+        text=symbol,
+        font=("Arial", 26),
+        bg="white",
+        fg="black",
+        padx=12,
+        pady=2,
+        cursor="hand2"
+    )
+    if command:
+        lbl.bind("<Button-1>", lambda e: command())
+
+    # Hover effect
+    lbl.bind("<Enter>", lambda e: lbl.config(bg="#f0f0f0"))
+    lbl.bind("<Leave>", lambda e: lbl.config(bg="white"))
+
+    lbl.pack(side=tk.LEFT, padx=8)
+    return lbl
+
+
+
+root.mainloop()
