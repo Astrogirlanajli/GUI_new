@@ -1,0 +1,646 @@
+# Import the necessary Libraries
+
+import tkinter as tk
+import tkinter.ttk as ttk
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib.pyplot as plt
+import numpy as np
+import warnings
+warnings.filterwarnings("ignore")
+import pandas as pd
+import joblib
+import time
+import threading
+import tkinter.font as tkFont
+import seabreeze.spectrometers as sb #For spectroscopy interface
+from tkinter import scrolledtext # For ScrolledText Widget
+
+
+
+# ---Tkinter app set-up---
+
+root = tk.Tk()
+root.title("GUI")
+root.geometry("1420x800") # Width & Height
+root.configure(bg="white")
+
+
+# Main Heading 
+
+blank = tk.PhotoImage()
+tk.Label(
+    root,
+    image=blank,
+    text="Raman Spectroscopic Tool for Detection of Explosives",
+    compound="c",              # Center text over image
+    font=("Arial",30, "bold"),
+    bg="#545454",
+    fg="white",
+    width=1420,                # Full window width in pixels
+    height=60,                 # Banner height in pixels
+    bd=0,
+    padx=0
+).pack(fill="x") # occupy full screen
+
+#--- left panel and frames set-up---
+
+# Create left panel inside root 
+left_frame = tk.Frame(root, bg="white", width=355)
+left_frame.pack(side="left", fill="y")
+left_frame.pack_propagate(False)
+
+# Top frame inside left panel
+top_frame = tk.Frame(left_frame, bg="#69c0eb", height=80, width=355)
+top_frame.pack(pady=(0, 0), padx=0)
+top_frame.pack_propagate(False)
+
+# Middle frame inside left panel
+middle_frame = tk.Frame(left_frame, bg="#b7b9b6", height=360, width=355)
+middle_frame.pack(pady=0, padx=0)
+middle_frame.pack_propagate(False)
+
+# Bottom: Light Pink Frame (Taller) inside left panel
+bottom_frame = tk.Frame(left_frame, bg="#F5D9C8", height=300, width=355)
+bottom_frame.pack(pady=(0, 0), padx=0, fill="both", expand=True)
+bottom_frame.pack_propagate(False)
+
+#---right panel set-up---
+
+right_frame = tk.Frame(root, bg="white", width=1065)
+right_frame.pack(side="right", fill="y")
+right_frame.pack_propagate(False)
+
+#---Buttons on left panel ---
+
+# Create a frame inside left_frame to hold the ml selection and train button 
+
+ml_train_row = tk.Frame(top_frame, bg="#69c0eb")
+ml_train_row.pack(pady=20, padx=10, anchor="w")
+
+#Train button
+
+# Define the custom font
+custom_font = tkFont.Font(family="Arial", size=16, weight="bold")
+
+# Set style BEFORE creating the buttons
+style = ttk.Style()
+style.theme_use("clam")  # Needed to apply background color on macOS/Linux
+
+# Flat style for Train button
+style.configure("Flat.TButton",
+                foreground="white",
+                background="#0082b2",
+                font=custom_font,
+                padding=(8, 6),
+                borderwidth=0,
+                focusthickness=0)
+
+# style for Interface button
+style.configure("Inter.TButton",
+                foreground="white",
+                background="black",   
+                font=custom_font,
+                padding=(8, 6),
+                borderwidth=0,
+                focusthickness=0)
+
+
+
+
+# Menubutton styling 
+
+style.configure("Black.TMenubutton",
+                background="#0082b2",
+                foreground="white",
+                arrowcolor="white",
+                font=('Arial', 16),
+                relief="flat",
+                padding=(10, 8),
+                width=17)
+
+style.map("Black.TMenubutton",
+          background=[("active", "#333333")],
+          foreground=[("active", "white")],
+          arrowcolor=[("active", "white")])
+
+# Menu options
+options = ["Linear Regression", "Poly Regression", "Logistic Regression", "Decision Tree", "CNN"]
+vars = [tk.BooleanVar() for _ in options]
+
+# Callback to update text
+def update_selection():
+    selected = [opt for opt, var in zip(options, vars) if var.get()]
+    btn_var.set(", ".join(selected) if selected else "Select options")
+
+# Variable and Menubutton
+btn_var = tk.StringVar(value="Select ML model(s)")
+menu_btn = ttk.Menubutton(ml_train_row, textvariable=btn_var, direction="below", style="Black.TMenubutton")
+
+
+# Create menu and attach to the menubutton
+menu = tk.Menu(menu_btn, tearoff=False)
+for i, opt in enumerate(options):
+    menu.add_checkbutton(label=opt, variable=vars[i], command=update_selection)
+menu_btn["menu"] = menu
+
+
+
+# Create Train Button
+btn2 = ttk.Button(ml_train_row, text="Train", style="Flat.TButton")
+
+# Pack Menubutton
+# Same width for both
+uniform_width = 18   # tweak until looks good
+
+menu_btn.config(width=uniform_width)
+btn2.config(width=uniform_width)
+
+menu_btn.pack(side="left", padx=(0, 10), ipady=4)
+btn2.pack(side="right", padx=(10, 0), ipady=4)
+
+
+
+
+# Spectrometer Set-up
+spectrometer_var = tk.StringVar(value="Select spectrometer")
+
+# Style for spectrometer Menubutton
+style.configure("BlackSingle.TMenubutton",
+                background="black",
+                foreground="white",
+                arrowcolor="white",
+                font=('Arial', 16),
+                relief="flat", padding=(10, 8),
+                width=18)
+
+style.map("BlackSingle.TMenubutton",
+          background=[("active", "#333333")],
+          foreground=[("active", "white")],
+          arrowcolor=[("active", "white")])
+
+
+# ---- Container for spectrometer Menubutton + Interface Button ----
+spectro_row = tk.Frame(middle_frame, bg="#b7b9b6")
+spectro_row.pack(padx=10, pady=(10, 10), anchor="w")
+
+# Spectrometer variable
+spectrometer_var = tk.StringVar(value="Select spectrometer")
+
+# Spectrometer Menubutton
+spectrometer_menu_btn = ttk.Menubutton(
+    spectro_row,
+    textvariable=spectrometer_var,
+    direction="below",
+    style="BlackSingle.TMenubutton"
+)
+spectrometer_menu_btn.pack(side="left", ipady=4)
+
+# Spectrometer menu setup
+spectrometer_menu = tk.Menu(spectrometer_menu_btn, tearoff=False)
+
+def set_spectrometer(val):
+    spectrometer_var.set(val)
+
+
+# Get a list of available spectrometers
+devices = sb.list_devices()
+
+if not devices:
+    spectrometer_menu.add_radiobutton(label="No spectrometers found.")
+else:
+    for device in devices:
+        spectrometer_menu.add_radiobutton(
+            label=str(device),
+            command=lambda d=device: set_spectrometer(d)
+        )
+
+
+spectrometer_menu_btn["menu"] = spectrometer_menu
+
+# "Interface" Button beside Menubutton
+interface_btn = ttk.Button(
+    spectro_row,
+    text="Interface",
+    style="Inter.TButton",
+    
+)
+interface_btn.pack(side="right", padx=(10, 0), ipady=4)
+
+
+
+# Now the Wavelength + Integration Time labels below
+label_row = tk.Frame(middle_frame, bg="#b7b9b6")
+label_row.pack(padx=10, pady=(5, 0), anchor="w")
+
+tk.Label(
+    label_row,
+    text="Wavelength (nm)",
+    bg="#b7b9b6",
+    fg="black",
+    font=("Arial", 16, "bold")
+).pack(side="left", padx=(5, 25))
+
+tk.Label(
+    label_row,
+    text="Integration Time",
+    bg="#b7b9b6",
+    fg="black",
+    font=("Arial", 16, "bold")
+).pack(side="left", padx=(0, 10))
+
+# Entry + Combobox row
+entry_row = tk.Frame(middle_frame, bg="#b7b9b6")
+entry_row.pack(padx=10, pady=(10, 15), anchor="w")
+
+
+
+
+# Wavelength Entry
+wavelength_entry = tk.Entry(
+    entry_row,
+    width=10,
+    font=("Arial", 16),
+    justify="center",
+    relief="flat",
+    bg="white",
+    bd=0,
+    highlightthickness=1,
+highlightbackground="black",
+    highlightcolor="black"
+)
+
+
+
+var_1= "785"
+wavelength_entry.insert(0, var_1)
+wavelength_entry.pack(side=tk.LEFT, padx=(20, 5), ipady=4)
+
+
+# Add a spacer Label to shift right without resizing widgets
+spacer = tk.Label(entry_row, width=7, bg="#b7b9b6")  # Adjust width to control right shift
+spacer.pack(side=tk.LEFT)
+
+
+
+# Frame for Integration Time + Unit
+integration_frame = tk.Frame(entry_row, bg="#b7b9b6")
+integration_frame.pack(side=tk.LEFT)
+
+# Integration Time Entry
+int_time_entry = tk.Entry(
+    integration_frame,
+    width=5,
+    font=("Arial", 16),
+    justify="center",
+    relief="flat",
+    bg="white",
+    bd=0,
+    highlightthickness=1,
+highlightbackground="black",
+    highlightcolor="black"
+)
+
+var_2 = "5"
+int_time_entry.insert(0, var_2)
+int_time_entry.pack(side=tk.LEFT, padx=(0, 10), ipady=4)
+ 
+
+# Flat Combobox Style
+style = ttk.Style()
+style.theme_use("clam")
+style.configure("Flat.TCombobox",
+                fieldbackground="white",
+                background="white",
+                selectbackground="white",
+                selectforeground="black",
+                relief="flat",
+                borderwidth=1,
+                bordercolor="black",
+                padding=2)
+style.map("Flat.TCombobox",
+          fieldbackground=[('readonly', 'white')],
+          background=[('readonly', 'white')])
+
+# Unit Combobox
+unit_combo = ttk.Combobox(
+    integration_frame,
+    values=["s", "ms", "ns", "µs"],
+    width=5,
+    font=("Arial", 14),
+    state="readonly",
+    style="Flat.TCombobox"
+)
+unit_combo.set("s")
+unit_combo.pack(side=tk.LEFT, ipady=2)
+
+ #--- Get wavelength, integration time, units from GUI ---
+
+
+def get_wav_value():
+    value_w = wavelength_entry.get() # Get wavelength input
+    print(f"The wavelength value is: {value_w}") # for my reference
+    value_i = int_time_entry.get() # Get integration time input
+    print(f"The integration time value is: {value_i}") # for my reference
+    unit = unit_combo.get()
+    print(f" Unit of integration is: {unit}") # for my reference
+    if unit == "s":
+        factor = 1_000_000
+    elif unit == "ms":
+        factor = 1_000
+    elif unit == "µs":
+        factor = 1
+    elif unit == "ns":
+        factor = 0.001
+    else:
+        factor = 1   # do nothing
+    integ_us = int(value_i * factor)
+    
+
+
+
+#--- Create Play, pause, bulb buttons ---
+
+# Row for Play, Pause, and Bulb buttons
+control_button_row = tk.Frame(middle_frame, bg="#b7b9b6")
+control_button_row.pack(pady=20, anchor="center")
+
+
+# Style the buttons 
+button_config = {
+    "font": ("Arial", 24, "bold"),
+    "width": 3,
+    "height": 2,
+    "bg": "#b7b9b6",
+    "fg": "green",
+    "relief": "flat",
+    "bd": 0,
+    "highlightbackground": "#b7b9b6",  
+    "activebackground": "#b7b9b6",
+    "highlightthickness": 0,
+}
+# configuration for pause(bcz of orange colour button)
+button_orgconfig = {
+    "font": ("Arial", 24, "bold"),
+    "width": 3,
+    "height": 2,
+    "bg": "#b7b9b6",
+    "fg": "orange",
+    "relief": "flat",
+    "bd": 0,
+    "highlightbackground": "#b7b9b6",  # also important
+    "activebackground": "#b7b9b6",
+    "highlightthickness": 0,
+}
+
+# Play Button
+play_button = tk.Button(control_button_row, text="▶", **button_config, command=get_wav_value )
+play_button.pack(side="left", padx=8)
+
+# Pause Button
+pause_button = tk.Button(control_button_row, text="⏸", **button_orgconfig)
+pause_button.pack(side="left", padx=8)
+
+# Bulb Button
+bulb_button = tk.Button(control_button_row, text="💡", **button_config)
+bulb_button.pack(side="left", padx=8)
+
+
+
+# Row below Integration time + Combobox
+baseline_row = tk.Frame(middle_frame, bg="#b7b9b6")
+baseline_row.pack(padx=10, pady=(10, 5), anchor="w")
+
+# "Baseline order:" Label
+tk.Label(
+    baseline_row,
+    text="Baseline order:",
+    bg="#b7b9b6",
+    fg="black",
+    font=("Arial", 16, "bold")
+).pack(side="left", padx=(0, 10))
+
+
+# Creating a Spinbox
+spinbox = tk.Spinbox(baseline_row, from_=0, to=15, width=8, relief="flat", repeatdelay=500, repeatinterval=1, font=("Arial", 16), bg="white", fg="black")
+
+# Setting options for the Spinbox
+spinbox.config(state="normal", bd=3, justify="center", wrap=True)
+
+spinbox.insert(0, "1")
+
+spinbox.pack(side="left", padx=(0, 20), ipady=4)
+# Flat style for Correct button
+style.configure("Black.TButton",
+                foreground="white",
+                background="black",
+                font=custom_font,
+                padding=(6, 4),
+                borderwidth=0,
+                focusthickness=0)
+
+# "Correct" Button
+btn3 = ttk.Button(baseline_row, text="Correct", style="Black.TButton")
+btn3.pack(side="left", ipadx=10, ipady=4)
+
+#tk.Label(middle_frame, text="", bg="#b7b9b6", height=1).pack()
+
+
+# Row for Normalisation button (full width)
+normalise_row = tk.Frame(middle_frame, bg="#b7b9b6")
+normalise_row.pack(padx=15, pady=(0, 10), fill="x")
+
+# "Normalisation" button occupying full width
+normalise_btn = ttk.Button(
+    normalise_row,
+    text="Normalisation",
+    style="Black.TButton"
+)
+normalise_btn.pack(fill="x", ipady=6)
+
+
+
+# Canvas for the oval-shaped Detect button
+canvas = tk.Canvas(bottom_frame, width=200, height=120, highlightthickness=0, bg="#F5D9C8", bd=0)
+canvas.pack(pady=(10, 0))
+
+# Oval color
+matched_color = "#bc3fde"
+
+# Create oval and text for detect button
+oval = canvas.create_oval(20, 20, 180, 100, fill=matched_color, outline=matched_color)
+text = canvas.create_text(100, 60, text="Detect", font=("Arial", 16, "bold"), fill="white")
+
+
+# Placeholder image
+blank = tk.PhotoImage()
+
+# Label to show after clicking Detect
+banner_label = tk.Label(
+    bottom_frame,
+    image=blank,
+    text=" 💥 Explosive ",
+    compound="c",
+    font=("Arial", 35, "bold"),
+    bg="#f8f549",
+    fg="#ff6d4d",
+    height=80,
+    bd=0
+)
+
+
+
+# Individual model result after detect button is pressed
+
+#  Clears the content of a ScrolledText widget.
+
+def clear_scrolled_text(widget, new_text=None):
+    banner_label.pack(fill="x", pady=(10, 5)) # Show banner
+    if not widget.winfo_ismapped():  # only pack the widget if not already visible
+        widget.pack(padx=10, pady=(20,10), fill="x")
+    widget.config(state='normal')       # Enable editing
+    print("Yes")
+    widget.delete("1.0", tk.END)        # Delete all text
+    # Get selected models
+    selected_models = [opt for opt, var in zip(options, vars) if var.get()]
+    if not selected_models:
+        text_area.insert(tk.END, "No ML model(s) selected\n")
+    else:
+        for model in selected_models:
+            is_poly = "poly" in model.lower()
+            result_text = "Non-Explosive" if is_poly else "Explosive"
+            text_area.insert(tk.END, f"{model}: {result_text}\n")
+    widget.tag_configure("center", justify="center")  # for centering text
+    widget.tag_add("center", "1.0", "end")
+    widget.config(state='disabled')  
+
+ # Create ScrolledText widget
+text_area = scrolledtext.ScrolledText(
+        bottom_frame,
+        wrap=tk.WORD,
+        width=25,
+        height=5,
+        font=("Arial", 18),
+        bg="#fff8e7",
+        fg="black"
+    )
+ 
+
+# Bind click events
+canvas.tag_bind(oval, "<Button-1>", lambda e: clear_scrolled_text(text_area))
+canvas.tag_bind(text, "<Button-1>", lambda e: clear_scrolled_text(text_area))
+
+# -- Play/Pause tracking variables --
+paused = False
+start_time = time.time()
+last_pause_time = 0
+accumulated_pause = 0
+
+# -- Pause/Play functions --
+def toggle_pause():
+    global paused, last_pause_time
+    paused = True
+    last_pause_time = time.time()
+
+def toggle_play():
+    global paused, accumulated_pause
+    if paused:
+        paused = False
+        accumulated_pause += time.time() - last_pause_time
+
+# -- Function to create a modern icon-like label that acts like a button : still working--
+def create_icon_button(parent, symbol, command=None):
+    lbl = tk.Label(
+        parent,
+        text=symbol,
+        font=("Arial", 26),
+        bg="white",
+        fg="black",
+        padx=12,
+        pady=2,
+        cursor="hand2"
+    )
+    if command:
+        lbl.bind("<Button-1>", lambda e: command())
+
+    # Hover effect
+    lbl.bind("<Enter>", lambda e: lbl.config(bg="#f0f0f0"))
+    lbl.bind("<Leave>", lambda e: lbl.config(bg="white"))
+
+    lbl.pack(side=tk.LEFT, padx=8)
+    return lbl
+
+#---Plot box for Live, background, Normalised plot set-up---
+def create_plot_box(parent, title):
+    # Define color by title
+    title_lower = title.lower()
+    if "normalised" in title_lower:
+        box_color = "white"
+        text_color = "orange"
+    elif "corrected" in title_lower:
+        box_color = "white"
+        text_color = "green"
+    else:  # Live spectrum or others
+        box_color = "white"
+        text_color = "black"
+
+    # Outer container (holds label and box)
+    container = tk.Frame(parent, bg="white")
+    container.pack(pady=(15, 5), anchor="w")
+
+    # Label (above box, outside)
+    title_label = tk.Label(container, text=title, font=("Arial", 16, "bold"),
+                           fg=text_color, bg="white", anchor="w", justify="left")
+    title_label.pack(anchor="w", padx=10)
+
+    # Colored frame (box)
+    frame = tk.Frame(container, bg=box_color, height=200, width=1020,
+                     highlightbackground="black", highlightthickness=2)
+    frame.pack_propagate(False)
+    frame.pack(padx=10, pady=(2, 0))
+
+
+# Run the plot_box function   
+create_plot_box(right_frame, "Live Spectrum")
+create_plot_box(right_frame, "Background Corrected Spectrum")
+create_plot_box(right_frame, "Normalised Spectrum")
+
+
+# Incorporate the analysis code
+
+# Import trained model
+# --- Load the trained model ---
+#model = joblib.load('logistic_model_raman.pkl') # Have to find this pal
+ 
+# Select Spectrometer
+
+
+if not devices:
+    print("No spectrometers found.")
+else:
+    spec = sb.Spectrometer(devices[0])    
+    spec.integration_time_micros(integ_us) # Integration time in micro second unit
+
+    # --- Convert X axis into Raman shift ---
+    value_w = float(wavelength_entry.get())
+    wavelengths = spec.wavelengths()
+    rs = (10**7 / value_w) - (10**7/ wavelengths)
+
+    # --- Acquire spectrum and normalise ---
+    Dark_spectrum = spec.intensities()  # Save dark spectrum
+    spectrum = spec.intensities() - Dark_spectrum # Get spectrum
+    intensity = (spectrum - spectrum.min()) / (spectrum - spectrum.min()).max() # Normalization
+    print("Spectrum acquired and normalised.")
+
+
+copyright_label = tk.Label(
+    right_frame,
+    text="© Laser Spectroscopy Group, ACRHEM, DIA-CoE, UoH, India",
+    font=("Arial", 14, "bold"),
+    bg="white",   # dark grey like heading
+    fg="black",
+    height=2
+)
+copyright_label.pack(side="bottom", fill="x")
+
+root.mainloop()
+
